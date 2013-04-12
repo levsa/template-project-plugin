@@ -1,21 +1,24 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
-  xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
-  xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
-  <f:entry title="${%Template Project}" description="Use all the builders from this project.">
+         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
+         xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
+
+    <f:entry title="${%Template Project}" description="Use all the builders from this project.">
     <f:editableComboBox field="projectName"
       items="${app.topLevelItemNames}" />
     <t:jobLink job="${instance.job}" />
   </f:entry>
 
-  <j:if test="${instance.hasParameters()}">
+  <j:if test="${it.isParameterized()}">
 
-    <j:forEach items="${instance.parameterValues}" var="param">
-        <f:textbox value="${param.name}" />
-      <f:entry title="${%Value}" field="value">
-        <f:textbox value="${param.value}" />
+      <f:entry title="Build parameters">
+      <j:forEach var="parameterDefinition" items="${it.parameterDefinitions}">
+          <tbody>
+              <st:include it="${parameterDefinition}"
+                          page="${parameterDefinition.descriptor.valuePage}" />
+          </tbody>
+      </j:forEach>
       </f:entry>
-    </j:forEach>
- 
   </j:if>
 
 </j:jelly>

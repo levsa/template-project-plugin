@@ -15,6 +15,7 @@ import hudson.model.Project;
 import hudson.model.StringParameterValue;
 import hudson.security.AccessControlled;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildWrapper;
 import hudson.tasks.Builder;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
@@ -36,24 +37,46 @@ public class ProxyBuilder extends Builder {
 	@DataBoundConstructor
 	public ProxyBuilder(String projectName) {
 	    this.projectName = projectName;
-	    this.parameterValues = new ArrayList<StringParameterValue>();
-	    this.parameterValues.add(new StringParameterValue("foo", "bar"));
-	    AbstractProject p = (AbstractProject) Hudson.getInstance().getItem(projectName);
-	    if (p != null && p.isParameterized()) {
-	        JobProperty property = p.getProperty(ParametersDefinitionProperty.class);
-	        if (property != null) {
-	            ParametersDefinitionProperty paramProperty = (ParametersDefinitionProperty) property;
-	            for (String name : paramProperty.getParameterDefinitionNames()) {
-	                ParameterDefinition definition = paramProperty.getParameterDefinition(name);
-	                String value = "";
-	                if (definition.getType().equals("StringParameterValue")) {
-	                    value = ((StringParameterValue)definition.getDefaultParameterValue()).value;
-	                }
-	                this.parameterValues.add(new StringParameterValue(name, value));
-	            }
-	        }
-	    }
+        this.parameterValues = Collections.emptyList();
 	}
+
+    public List<StringParameterValue> retrieveParameterValues() {
+        Project p = getProject();
+        List<StringParameterValue> parameterValues = new ArrayList<StringParameterValue>();
+        if (p != null && p.isParameterized()) {
+            JobProperty property = p.getProperty(ParametersDefinitionProperty.class);
+            if (property != null) {
+                ParametersDefinitionProperty paramProperty = (ParametersDefinitionProperty) property;
+                for (String name : paramProperty.getParameterDefinitionNames()) {
+                    ParameterDefinition definition = paramProperty.getParameterDefinition(name);
+                    String value = "";
+                    if (definition.getType().equals("StringParameterValue")) {
+                        value = ((StringParameterValue)definition.getDefaultParameterValue()).value;
+                    }
+                    parameterValues.add(new StringParameterValue(name, value));
+                }
+            }
+        }
+        return parameterValues;
+    }
+
+    public boolean isParameterized() {
+        return getProject().isParameterized();
+    }
+
+    public List<ParameterDefinition> getParameterDefinitions() {
+        Project p = getProject();
+        ParametersDefinitionProperty property = (ParametersDefinitionProperty)p.getProperty(ParametersDefinitionProperty.class);
+        return property.getParameterDefinitions();
+    }
+
+    public Project getProject() {
+        return (Project) Hudson.getInstance().getItem(projectName);
+    }
+
+    public List<StringParameterValue> getParameterValues() {
+        return parameterValues;
+    }
 
 	public String getProjectName() {
 		return projectName;
