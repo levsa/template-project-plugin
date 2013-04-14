@@ -9,8 +9,18 @@
     <t:jobLink job="${instance.job}" />
   </f:entry>
 
-  <j:if test="${it.isParameterized()}">
+  <!-- <j:if test="${it.isParameterized()}"> -->
 
+    <f:entry title="Build parameters">
+        <j:forEach var="parameterDefinition" items="${instance.parameterDefinitions}">
+            <tbody>
+                <st:include it="${parameterDefinition}"
+                            page="${parameterDefinition.descriptor.valuePage}" />
+            </tbody>
+        </j:forEach>
+    </f:entry>
+
+      <!--
       <f:entry title="Build parameters">
       <j:forEach var="parameterDefinition" items="${it.parameterDefinitions}">
           <tbody>
@@ -19,6 +29,7 @@
           </tbody>
       </j:forEach>
       </f:entry>
-  </j:if>
+      -->
+  <!-- </j:if> -->
 
 </j:jelly>
