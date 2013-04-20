@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -30,16 +31,6 @@ public class ProxyBuilder extends Builder {
 
 	private final String projectName;
     private List<ParameterValue> parameterValues;
-
-    public final static class MyStringValue {
-        public String name;
-        public String value;
-        @DataBoundConstructor
-        public MyStringValue(String name, String value) {
-            this.name = name;
-            this.value = value;
-        }
-    }
 
 	@DataBoundConstructor
 	public ProxyBuilder(String projectName, List<ParameterValue> parameterValues) {
@@ -64,14 +55,17 @@ public class ProxyBuilder extends Builder {
     }
 
     public List<ParameterDefinition> getParameterDefinitions() {
+        List<ParameterDefinition> myParameterDefinitions = new ArrayList<ParameterDefinition>();
         List<ParameterDefinition> parameterDefinitions = getParameterDefinitions(projectName);
         for (ParameterDefinition p : parameterDefinitions) {
             ParameterValue value = getParameterValue(parameterValues, p.getName());
+            ParameterDefinition newDefinition = p;
             if (value != null) {
-                log("Parameter " + p.getName() + " = " + value);
+                newDefinition = p.copyWithDefaultValue(value);
             }
+            myParameterDefinitions.add(newDefinition);
         }
-        return parameterDefinitions;
+        return myParameterDefinitions;
     }
 
     public static List<ParameterDefinition> getParameterDefinitions(String projectName) {
@@ -186,13 +180,19 @@ public class ProxyBuilder extends Builder {
                 List<ParameterDefinition> parameterDefinitions = getParameterDefinitions(projectName);
                 for (Object o : a) {
                     JSONObject jo = (JSONObject) o;
-                    String name = jo.getString("name");
+                    if (jo != null) {
+                        try {
+                            String name = jo.getString("name");
 
-                    ParameterDefinition d = getParameterDefinition(parameterDefinitions, name);
-                    if(d==null)
-                        throw new IllegalArgumentException("No such parameter definition: " + name);
-                    ParameterValue parameterValue = d.createValue(req, jo);
-                    values.add(parameterValue);
+                            ParameterDefinition d = getParameterDefinition(parameterDefinitions, name);
+                            if(d==null)
+                                throw new IllegalArgumentException("No such parameter definition: " + name);
+                            ParameterValue parameterValue = d.createValue(req, jo);
+                            values.add(parameterValue);
+                        } catch (JSONException e) {
+                            log("name not found" + e.getLocalizedMessage());
+                        }
+                    }
                 }
                 return values;
             } else {
